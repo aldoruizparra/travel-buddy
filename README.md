@@ -1,4 +1,4 @@
-Original App Design Project - README Template
+Travel Buddy: App Design Project - README Template
 ===
 
 # Travel Buddy
@@ -37,7 +37,7 @@ Travel Buddy helps users track individual and shared travel expenses, split cost
 **Optional Nice-to-have Stories**
 * User can split expenses between group members and calculate who owes what.
 * User can use live currency conversion (API integration).
-*  User can generate a summary report of total costs and balances per member.  
+* User can generate a summary report of total costs and balances per member.  
 * User can take or upload photos of receipts.
 
 
@@ -85,7 +85,7 @@ Travel Buddy helps users track individual and shared travel expenses, split cost
 ## Wireframes
 
 [Add picture of your hand sketched wireframes in this section]
-<img src="YOUR_WIREFRAME_IMAGE_URL" width=600>
+<img src="IMG_0776.jpeg" width=600>
 
 ### [BONUS] Digital Wireframes & Mockups
 
