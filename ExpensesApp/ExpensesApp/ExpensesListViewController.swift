@@ -31,13 +31,22 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let addVC = segue.destination as? AddExpenseViewController {
-            addVC.onSave = { [weak self] newExpense in
-                self?.expenses.append(newExpense)
+        // If you embedded Add screen in a nav controller, unwrap it:
+        if let nav = segue.destination as? UINavigationController,
+           let addVC = nav.topViewController as? AddExpenseViewController {
+            addVC.onSave = { [weak self] e in
+                self?.expenses.append(e)
+                self?.tableView.reloadData()
+                // (Optional) persist here
+            }
+        } else if let addVC = segue.destination as? AddExpenseViewController {
+            addVC.onSave = { [weak self] e in
+                self?.expenses.append(e)
                 self?.tableView.reloadData()
             }
         }
     }
+
     
     override func viewDidLoad() {
            super.viewDidLoad()
