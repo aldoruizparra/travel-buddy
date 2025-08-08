@@ -12,6 +12,18 @@ Travel Buddy: App Design Project - README Template
 
 ## Overview
 
+### Current Progress
+1. Added Screen with List of Expenses
+2. Added Screen to add Expenses
+3. Added Functionality to add expenses
+
+Next steps:
+1. Add functionality to view and store a list of all expenses in a table view.
+2. Add functionality to save an expense.
+3. Add functionality to add group members and descriptions.
+4. Work on all other bonus features.
+
+     
 ### Description
 Travel Buddy helps users track individual and shared travel expenses, split costs between group members, and optionally convert currencies in real-time. It is great for friends, family, or groups traveling together, this app simplifies managing trip expenses in one place.
 
