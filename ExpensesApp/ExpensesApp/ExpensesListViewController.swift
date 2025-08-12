@@ -7,14 +7,14 @@
 
 import UIKit
 
-struct Expense {
-    let title: String
-    let amount: String
-    let owedTo: String?
-    let owedBy: String?
-    let note: String?
-    let date: Date
-}
+//struct Expense {
+//    let title: String
+//    let amount: String
+//    let owedTo: String?
+//    let owedBy: String?
+//    let note: String?
+//    let date: Date
+//}
 
 private let currencyFormatter: NumberFormatter = {
     let f = NumberFormatter()
@@ -24,7 +24,7 @@ private let currencyFormatter: NumberFormatter = {
 
 private let dateFormatter: DateFormatter = {
     let f = DateFormatter()
-    f.dateFormat = "MMM d, yyyy"   // e.g., “Aug 10, 2025”
+    f.dateFormat = "MMM d, yyyy"   
     return f
 }()
 
@@ -37,6 +37,16 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
 
     @IBOutlet weak var tableView: UITableView!
     
+    override func viewDidLoad() {
+           super.viewDidLoad()
+           title = "Expenses"
+           tableView.dataSource = self
+           tableView.delegate = self
+        
+           loadExpenses()
+           tableView.reloadData()
+       }
+
     @IBAction func addTapped(_ sender: UIBarButtonItem) {
         editingIndexPath = nil
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -44,37 +54,31 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
 
            addVC.expenseToEdit = nil     // (explicit)
            addVC.onSave = { [weak self] expense in
-               self?.expenses.append(expense)
-               self?.tableView.reloadData()
+               guard let self = self else { return }
+               self.expenses.append(expense)
+               self.saveExpenses()
+               self.tableView.reloadData()
            }
            present(addVC, animated: true)
 
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // If you embedded Add screen in a nav controller, unwrap it:
-        if let nav = segue.destination as? UINavigationController,
-           let addVC = nav.topViewController as? AddExpenseViewController {
-            addVC.onSave = { [weak self] e in
-                self?.expenses.append(e)
-                self?.tableView.reloadData()
-                // (Optional) persist here
-            }
-        } else if let addVC = segue.destination as? AddExpenseViewController {
-            addVC.onSave = { [weak self] e in
-                self?.expenses.append(e)
-                self?.tableView.reloadData()
-            }
-        }
-    }
-
-    
-    override func viewDidLoad() {
-           super.viewDidLoad()
-           title = "Expenses"
-           tableView.dataSource = self
-           tableView.delegate = self
-       }
+//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+//        // If you embedded Add screen in a nav controller, unwrap it:
+//        if let nav = segue.destination as? UINavigationController,
+//           let addVC = nav.topViewController as? AddExpenseViewController {
+//            addVC.onSave = { [weak self] e in
+//                self?.expenses.append(e)
+//                self?.tableView.reloadData()
+//                // (Optional) persist here
+//            }
+//        } else if let addVC = segue.destination as? AddExpenseViewController {
+//            addVC.onSave = { [weak self] e in
+//                self?.expenses.append(e)
+//                self?.tableView.reloadData()
+//            }
+//        }
+//    }
 
     
    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -134,6 +138,7 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
        addVC.onSave = { [weak self] updated in
            guard let self, let idx = self.editingIndexPath?.row else { return }
            self.expenses[idx] = updated
+           self.saveExpenses()
            self.tableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .automatic)
        }
 
@@ -170,12 +175,38 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
         ac.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
             guard let self else { return }
             self.expenses.remove(at: indexPath.row)
+            self.saveExpenses()
             self.tableView.deleteRows(at: [indexPath], with: .automatic)
-            // TODO: persist if you’re saving to disk (e.g., self.saveExpenses())
         })
         ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(ac, animated: true)
     }
+    
+    private let expensesKey = "expenses_v1"
+
+    private func saveExpenses() {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        do {
+            let data = try encoder.encode(expenses)
+            UserDefaults.standard.set(data, forKey: expensesKey)
+        } catch {
+            print("Failed to encode expenses:", error)
+        }
+    }
+
+    private func loadExpenses() {
+        guard let data = UserDefaults.standard.data(forKey: expensesKey) else { return }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        do {
+            expenses = try decoder.decode([Expense].self, from: data)
+        } catch {
+            print("Failed to decode expenses:", error)
+            expenses = [] // fallback
+        }
+    }
+
 }
 
     

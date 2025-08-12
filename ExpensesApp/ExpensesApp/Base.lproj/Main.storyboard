@@ -44,7 +44,6 @@
                         <barButtonItem key="rightBarButtonItem" image="plus.app.fill" catalog="system" id="OK0-hV-7b0">
                             <connections>
                                 <action selector="addTapped:" destination="Hyl-4U-i78" id="eNj-R3-pJk"/>
-                                <segue destination="6yg-Ez-EcE" kind="presentation" modalPresentationStyle="pageSheet" id="bCY-gX-Sj6"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>
@@ -61,7 +60,7 @@
             <objects>
                 <viewController storyboardIdentifier="AddExpenseViewController" id="6yg-Ez-EcE" customClass="AddExpenseViewController" customModule="ExpensesApp" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="MLo-g6-3Fb">
-                        <rect key="frame" x="0.0" y="0.0" width="393" height="783"/>
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="w6S-Of-Xl4">
@@ -168,7 +167,7 @@
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Expense" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="y4l-G4-3MC">
-                                <rect key="frame" x="164" y="99" width="65" height="21"/>
+                                <rect key="frame" x="164" y="158" width="65" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
