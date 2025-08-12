@@ -48,13 +48,7 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
                self?.tableView.reloadData()
            }
            present(addVC, animated: true)
-//        if let addVC = storyboard.instantiateViewController(withIdentifier: "AddExpenseViewController") as? AddExpenseViewController {
-//            addVC.onSave = { [weak self] expense in
-//                self?.expenses.append(expense)
-//                self?.tableView.reloadData()
-//            }
-//            present(addVC, animated: true)
-//        }
+
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -87,19 +81,11 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
        return expenses.count
    }
 
-
-//   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//       let cell = tableView.dequeueReusableCell(withIdentifier: "ExpenseCell", for: indexPath)
-//       let expense = expenses[indexPath.row]
-//       cell.textLabel?.text = "\(expense.title) - \(expense.amount)"
-//       return cell
-//   }
-//
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ExpenseCell", for: indexPath)
         let e = expenses[indexPath.row]
 
-        // Build the subtitle string
+        // Title + subtitle you already build...
         var parts: [String] = []
         if let by = e.owedBy, let to = e.owedTo, !by.isEmpty, !to.isEmpty {
             parts.append("\(by) → \(to)")
@@ -108,19 +94,18 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
         } else if let to = e.owedTo, !to.isEmpty {
             parts.append("Owed to \(to)")
         }
-        // If date is non-optional:
-        parts.append(dateFormatter.string(from: e.date)) // or optional-bind if Date?
+        parts.append(dateFormatter.string(from: e.date))
 
-        // ✅ Configure content (iOS 14+)
         var content = cell.defaultContentConfiguration()
         content.text = e.title
         content.textProperties.font = .systemFont(ofSize: 17, weight: .semibold)
         content.secondaryText = parts.joined(separator: " • ")
         content.secondaryTextProperties.color = .secondaryLabel
-        content.secondaryTextProperties.numberOfLines = 1
         cell.contentConfiguration = content
 
-        // Amount on the right
+        let amountDouble = Double(e.amount) ?? 0
+        let amountText = currencyFormatter.string(from: NSNumber(value: amountDouble)) ?? e.amount
+
         let amountLabel: UILabel
         if let lbl = cell.accessoryView as? UILabel {
             amountLabel = lbl
@@ -131,14 +116,13 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
             cell.accessoryView = lbl
             amountLabel = lbl
         }
-        let amountDouble = Double(e.amount) ?? 0
-        amountLabel.text = currencyFormatter.string(from: NSNumber(value: amountDouble)) ?? e.amount
+        amountLabel.text = amountText
+        amountLabel.sizeToFit()
+
 
         return cell
     }
 
-    
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)  // ← add this
         let sb = UIStoryboard(name: "Main", bundle: nil)
