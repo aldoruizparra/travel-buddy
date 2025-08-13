@@ -7,36 +7,29 @@
 import UIKit
 
 
-final class SummaryViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-
+class SummaryViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    
     
     
     @IBOutlet weak var summaryTableView: UITableView!
-    
     private let currencyFormatter: NumberFormatter = {
         let f = NumberFormatter()
         f.numberStyle = .currency
         return f
     }()
 
-    // Keep this string EXACTLY the same as in ExpensesListViewController
+    // Must match the key used in ExpensesListViewController
     private let expensesKey = "expenses_v1"
 
     private var expenses: [Expense] = []
 
-    // Computed summaries
-    private var totalsByPair: [PairKey: Double] = [:]
-    private var totalsByDebtor: [String: Double] = [:]
-
-    private enum Section: Int, CaseIterable {
-        case byPair = 0
-        case byPerson = 1
-    }
-
-    private struct PairKey: Hashable {
-        let by: String
+    // Parsed net settlements (debtor -> creditor)
+    private struct Transfer {
+        let from: String
         let to: String
+        let amount: Double
     }
+    private var settlements: [Transfer] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,14 +37,11 @@ final class SummaryViewController: UIViewController, UITableViewDataSource, UITa
 
         summaryTableView.dataSource = self
         summaryTableView.delegate = self
-
-        // Basic cell
         summaryTableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
 
         loadExpenses()
         recompute()
 
-        // Listen for changes from the Expenses tab
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(expensesChanged),
                                                name: .expensesChanged,
@@ -60,11 +50,12 @@ final class SummaryViewController: UIViewController, UITableViewDataSource, UITa
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // In case the user switched tabs without a save notification (edge cases)
         loadExpenses()
         recompute()
         summaryTableView.reloadData()
     }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
 
     @objc private func expensesChanged() {
         loadExpenses()
@@ -87,87 +78,107 @@ final class SummaryViewController: UIViewController, UITableViewDataSource, UITa
         }
     }
 
+    // More forgiving amount parser (handles "1,234.56")
+    private let parseFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        return f
+    }()
+    private func parseAmount(_ s: String) -> Double? {
+        if let n = parseFormatter.number(from: s) { return n.doubleValue }
+        return Double(s)
+    }
+
+    
     private func recompute() {
-        totalsByPair.removeAll()
-        totalsByDebtor.removeAll()
+        // 1) Compute net balance per person
+        //    owedBy (debtor) -= amount, owedTo (creditor) += amount
+        var balances: [String: Double] = [:]
 
         for e in expenses {
             guard let by = e.owedBy?.trimmingCharacters(in: .whitespacesAndNewlines),
                   let to = e.owedTo?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !by.isEmpty, !to.isEmpty,
-                  let amt = Double(e.amount)
+                  let amt = parseAmount(e.amount), amt > 0
             else { continue }
 
-            // Sum per pair (Alice → Bob)
-            let key = PairKey(by: by, to: to)
-            totalsByPair[key, default: 0] += amt
+            balances[by, default: 0] -= amt
+            balances[to, default: 0] += amt
+        }
 
-            // Sum total each person owes (as debtor)
-            totalsByDebtor[by, default: 0] += amt
+        // 2) Split into debtors/creditors and greedily match to get net settlements
+        var debtors: [(name: String, amount: Double)] = []   // positive amount they owe
+        var creditors: [(name: String, amount: Double)] = [] // positive amount they’re owed
+
+        for (name, bal) in balances {
+            if bal < -0.0001 { debtors.append((name, -bal)) }
+            else if bal > 0.0001 { creditors.append((name, bal)) }
+        }
+
+        debtors.sort { $0.amount > $1.amount }
+        creditors.sort { $0.amount > $1.amount }
+
+        settlements.removeAll()
+        var i = 0, j = 0
+        while i < debtors.count && j < creditors.count {
+            let pay = min(debtors[i].amount, creditors[j].amount)
+            if pay > 0.0001 {
+                settlements.append(Transfer(from: debtors[i].name, to: creditors[j].name, amount: pay))
+            }
+            debtors[i].amount  -= pay
+            creditors[j].amount -= pay
+            if debtors[i].amount  <= 0.0001 { i += 1 }
+            if creditors[j].amount <= 0.0001 { j += 1 }
+        }
+
+        // Empty state when nothing is owed
+        if settlements.isEmpty {
+            let label = UILabel()
+            label.text = "All settled up!"
+            label.textAlignment = .center
+            label.textColor = .secondaryLabel
+            summaryTableView.backgroundView = label
+        } else {
+            summaryTableView.backgroundView = nil
         }
     }
 
     // MARK: - UITableViewDataSource
 
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return Section.allCases.count
-    }
+    func numberOfSections(in tableView: UITableView) -> Int { 1 }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let sec = Section(rawValue: section) else { return 0 }
-        switch sec {
-        case .byPair:
-            return totalsByPair.count
-        case .byPerson:
-            return totalsByDebtor.count
-        }
+        settlements.count
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        guard let sec = Section(rawValue: section) else { return nil }
-        switch sec {
-        case .byPair:
-            return "Who owes whom"
-        case .byPerson:
-            return "Total owed by person"
-        }
+        "Net balances"
     }
 
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = summaryTableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let t = settlements[indexPath.row]
 
-        guard let sec = Section(rawValue: indexPath.section) else { return cell }
-
-        switch sec {
-        case .byPair:
-            let items = totalsByPair.sorted { a, b in
-                if a.key.by == b.key.by { return a.key.to < b.key.to }
-                return a.key.by < b.key.by
-            }
-            let entry = items[indexPath.row]
-            let amountText = currencyFormatter.string(from: NSNumber(value: entry.value)) ?? String(entry.value)
-            cell.textLabel?.numberOfLines = 2
-            cell.textLabel?.text = "\(entry.key.by) → \(entry.key.to)\n\(amountText)"
-
-        case .byPerson:
-            let items = totalsByDebtor.sorted { a, b in
-                if a.value == b.value { return a.key < b.key }
-                return a.value > b.value
-            }
-            let entry = items[indexPath.row]
-            let amountText = currencyFormatter.string(from: NSNumber(value: entry.value)) ?? String(entry.value)
-            cell.textLabel?.text = "\(entry.key) owes \(amountText) total"
+        if #available(iOS 14.0, *) {
+            var content = UIListContentConfiguration.valueCell()
+            content.text = "\(t.from) → \(t.to)"
+            content.secondaryText = currencyFormatter.string(from: NSNumber(value: t.amount))
+            content.prefersSideBySideTextAndSecondaryText = true
+            cell.contentConfiguration = content
+        } else {
+            let amt = currencyFormatter.string(from: NSNumber(value: t.amount)) ?? String(t.amount)
+            cell.textLabel?.text = "\(t.from) → \(t.to): \(amt)"
         }
 
+        cell.selectionStyle = .none
         return cell
     }
 
     // MARK: - UITableViewDelegate
 
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
-        if let h = view as? UITableViewHeaderFooterView {
-            h.textLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        }
+        (view as? UITableViewHeaderFooterView)?.textLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
     }
 }
+
