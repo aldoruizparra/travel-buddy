@@ -16,6 +16,7 @@ class AddExpenseViewController: UIViewController {
     @IBOutlet weak var owedToTextField: UITextField!
     @IBOutlet weak var noteTextView: UITextView!
     @IBOutlet weak var dateTextField: UITextField!
+    @IBOutlet weak var locationTextField: UITextField!
     
     var onSave: ((Expense) -> Void)?
     
@@ -43,6 +44,7 @@ class AddExpenseViewController: UIViewController {
             owedByTextField.text = e.owedBy
             noteTextView.text   = e.note
             selectedDate         = e.date
+            locationTextField.text = e.location
             title = "Edit Expense"
         } else {
             title = "Add Expense"
@@ -110,7 +112,8 @@ class AddExpenseViewController: UIViewController {
            owedTo: emptyToNil(owedToTextField.text),
            owedBy: emptyToNil(owedByTextField.text),
            note:   noteTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true ? nil : noteTextView.text,
-           date:   selectedDate
+           date:   selectedDate,
+           location: emptyToNil(locationTextField.text)
        )
 
        onSave?(newExpense)

@@ -7,29 +7,20 @@
 
 import UIKit
 
-//struct Expense {
-//    let title: String
-//    let amount: String
-//    let owedTo: String?
-//    let owedBy: String?
-//    let note: String?
-//    let date: Date
-//}
-
-private let currencyFormatter: NumberFormatter = {
-    let f = NumberFormatter()
-    f.numberStyle = .currency
-    return f
-}()
-
-private let dateFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateFormat = "MMM d, yyyy"   
-    return f
-}()
-
 
 class ExpensesListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    
+    private let currencyFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        return f
+    }()
+
+    private let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, yyyy"
+        return f
+    }()
 
     var expenses: [Expense] = []
     // Track which row is being edited
@@ -63,22 +54,6 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
 
     }
     
-//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        // If you embedded Add screen in a nav controller, unwrap it:
-//        if let nav = segue.destination as? UINavigationController,
-//           let addVC = nav.topViewController as? AddExpenseViewController {
-//            addVC.onSave = { [weak self] e in
-//                self?.expenses.append(e)
-//                self?.tableView.reloadData()
-//                // (Optional) persist here
-//            }
-//        } else if let addVC = segue.destination as? AddExpenseViewController {
-//            addVC.onSave = { [weak self] e in
-//                self?.expenses.append(e)
-//                self?.tableView.reloadData()
-//            }
-//        }
-//    }
 
     
    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

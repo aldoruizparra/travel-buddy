@@ -14,4 +14,5 @@ struct Expense: Codable, Equatable {
     var owedBy: String?
     var note: String?
     var date: Date
+    var location: String?
 }
