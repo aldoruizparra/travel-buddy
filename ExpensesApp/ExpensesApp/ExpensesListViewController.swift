@@ -6,6 +6,11 @@
 //
 
 import UIKit
+import Foundation
+
+extension Notification.Name {
+    static let expensesChanged = Notification.Name("expensesChanged")
+}
 
 
 class ExpensesListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
@@ -159,12 +164,15 @@ class ExpensesListViewController: UIViewController, UITableViewDataSource, UITab
     
     private let expensesKey = "expenses_v1"
 
-    private func saveExpenses() {
+    private func saveExpenses(shouldNotify: Bool = true) {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         do {
             let data = try encoder.encode(expenses)
             UserDefaults.standard.set(data, forKey: expensesKey)
+            if shouldNotify {
+                        NotificationCenter.default.post(name: .expensesChanged, object: nil)
+                    }
         } catch {
             print("Failed to encode expenses:", error)
         }
